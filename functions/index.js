@@ -18,7 +18,23 @@ admin.initializeApp(projectInfo)
 
 authApi.use(cors);
 authApi.post('/token', (req, res) => {
-    res.send("ok");
+    // res.send("ok");/
+    admin.auth().createCustomToken(req.body.uid, {role: 'TEST'})
+        .then(function(customToken) {
+            // Send token back to client
+            res.send({
+                success: true,
+                token: customToken
+            })
+            return true;
+        })
+        .catch(function(error) {
+            res.send({
+                success: false,
+                message: error.message
+            })
+            return false;
+        });
 })
 
 exports.auth = functions.region('asia-northeast1').https.onRequest(authApi)
