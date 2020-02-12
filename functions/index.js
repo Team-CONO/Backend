@@ -5,6 +5,8 @@ const express = require('express')
 const bodyParser = require('body-parser')
 const cors = require('cors')({ origin: true })
 
+const authManager = require('./Attribute/AuthManager');
+
 const authApi = express();
 
 const serviceAccount = require('./service-account.json')
@@ -17,9 +19,14 @@ projectInfo['credential'] = admin.credential.cert(serviceAccount)
 admin.initializeApp(projectInfo)
 
 authApi.use(cors);
+authApi.use(authManager.verifyToken)
 authApi.post('/token', (req, res) => {
     // res.send("ok");/
-    admin.auth().createCustomToken(req.body.uid, {role: 'TEST'})
+    var db = admin.database();
+    var ref = db.ref(`accounts/${req.currentUID}/role`);
+    ref.once("value", function(snapshot) {
+        const role = snapshot.val() || 'Guest';
+        admin.auth().createCustomToken(req.currentUID, {role: role})
         .then(function(customToken) {
             // Send token back to client
             res.send({
@@ -35,6 +42,7 @@ authApi.post('/token', (req, res) => {
             })
             return false;
         });
+    });  
 })
 
 exports.auth = functions.region('asia-northeast1').https.onRequest(authApi)
