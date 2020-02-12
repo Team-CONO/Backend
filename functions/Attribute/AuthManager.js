@@ -1,5 +1,5 @@
 exports.verifyToken = function (request, response, next) {
-    admin.auth().verifyIdToken(idToken)
+    admin.auth().verifyIdToken(request.get('Authorization'))
     .then(function(decodedToken) {
         let uid = decodedToken.uid;
         // ...
