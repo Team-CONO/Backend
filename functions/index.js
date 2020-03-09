@@ -1,15 +1,13 @@
 const functions = require('firebase-functions');
 global.admin = require('firebase-admin');
 // Packages
-const express = require('express')
-const bodyParser = require('body-parser')
+const express = require('express');
+const bodyParser = require('body-parser');
 const cors = require('cors')({origin: true})
-
 const authManager = require('./Attribute/AuthManager');
-
 const authApi = express();
+const serviceAccount = require('./service-account.json');
 
-const serviceAccount = require('./service-account.json')
 const projectInfo = {
     databaseURL: functions
         .config()
@@ -27,13 +25,13 @@ const projectInfo = {
 projectInfo['credential'] = global
     .admin
     .credential
-    .cert(serviceAccount)
+    .cert(serviceAccount);
 global
     .admin
-    .initializeApp(projectInfo)
+    .initializeApp(projectInfo);
 
 authApi.use(cors);
-authApi.use(authManager.verifyToken)
+authApi.use(authManager.verifyToken);
 authApi.post('/token', (req, res) => {
     // res.send("ok");/
     var db = admin.database();
@@ -54,16 +52,28 @@ authApi.post('/token', (req, res) => {
                 return false;
             });
     });
-})
+});
 authApi.post('/admin', (req, res) => {
     // res.send('check')
-    let user_uid = req
-        .body
-        console
-        .log(user_uid);
-})
+    let user_uid = req.body;
+    console.log(user_uid);
+    global
+        .admin
+        .auth()
+        .deleteUser(user_uid)
+        .then(function () {
+            console.log('Successfully deleted user');
+            res.send({success: true})
+            return true;
+        })
+        .catch(function (error) {
+            console.log('Error deleting user:', error);
+            res.send({success: false})
+            return false;
+        });
+});
 
 exports.auth = functions
     .region('asia-northeast1')
     .https
-    .onRequest(authApi)
+    .onRequest(authApi);
